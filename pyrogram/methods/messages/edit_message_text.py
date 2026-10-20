@@ -86,7 +86,7 @@ class EditMessageText:
 
         if rich_message is not None:
             r = await self.invoke(
-                raw.functions.messages.EditMessageRich(
+                raw.functions.messages.EditMessage(
                     peer=await self.resolve_peer(chat_id),
                     id=message_id,
                     reply_markup=await reply_markup.write(self) if reply_markup else None,

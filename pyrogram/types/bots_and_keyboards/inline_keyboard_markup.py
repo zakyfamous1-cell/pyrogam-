@@ -54,19 +54,6 @@ class InlineKeyboardMarkup(Object):
         )
 
     async def write(self, client: "pyrogram.Client"):
-        if any(getattr(b, "has_style", False) for r in self.inline_keyboard for b in r):
-            styled_rows = []
-
-            for r in self.inline_keyboard:
-                buttons = []
-
-                for b in r:
-                    buttons.append(await b.write_styled(client))
-
-                styled_rows.append(raw.types.KeyboardInlineButtonRow(buttons=buttons))
-
-            return raw.types.ReplyInlineMarkupStyled(rows=styled_rows)
-
         rows = []
 
         for r in self.inline_keyboard:
@@ -75,15 +62,6 @@ class InlineKeyboardMarkup(Object):
             for b in r:
                 buttons.append(await b.write(client))
 
-            rows.append(raw.types.KeyboardButtonRow(buttons=buttons))
+            rows.append(raw.types.KeyboardInlineButtonRow(buttons=buttons))
 
         return raw.types.ReplyInlineMarkup(rows=rows)
-
-        # There seems to be a Python issues with nested async comprehensions.
-        # See: https://bugs.python.org/issue33346
-        #
-        # return raw.types.ReplyInlineMarkup(
-        #     rows=[raw.types.KeyboardButtonRow(
-        #         buttons=[await j.write(client) for j in i]
-        #     ) for i in self.inline_keyboard]
-        # )

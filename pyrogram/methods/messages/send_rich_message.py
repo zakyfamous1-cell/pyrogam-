@@ -93,7 +93,7 @@ class SendRichMessage:
         reply_to = utils.get_reply_head_fm(message_thread_id, reply_to_message_id, partial_reply)
 
         r = await self.invoke(
-            raw.functions.messages.SendMessageRich(
+            raw.functions.messages.SendMessage(
                 peer=await self.resolve_peer(chat_id),
                 silent=disable_notification or None,
                 reply_to=reply_to,
