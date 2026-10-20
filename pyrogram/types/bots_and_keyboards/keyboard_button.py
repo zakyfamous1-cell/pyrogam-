@@ -71,41 +71,49 @@ class KeyboardButton(Object):
 
     @staticmethod
     def read(b):
-        t = getattr(b, "type", None)
+        if isinstance(b, raw.types.KeyboardButton):
+            return b.text
 
-        if isinstance(t, raw.types.ButtonTypeRequestPhone):
+        if isinstance(b, raw.types.KeyboardButtonRequestPhone):
             return KeyboardButton(
                 text=b.text,
                 request_contact=True
             )
 
-        if isinstance(t, raw.types.ButtonTypeRequestGeoLocation):
+        if isinstance(b, raw.types.KeyboardButtonRequestGeoLocation):
             return KeyboardButton(
                 text=b.text,
                 request_location=True
             )
 
-        if isinstance(t, raw.types.ButtonTypeSimpleWebView):
+        if isinstance(b, raw.types.KeyboardButtonSimpleWebView):
             return KeyboardButton(
                 text=b.text,
                 web_app=types.WebAppInfo(
-                    url=t.url
+                    url=b.url
                 )
             )
-
-        if isinstance(b, raw.types.KeyboardButton):
-            return b.text
 
     def write(self):
         style = utils.make_button_style(self.style, self.icon_custom_emoji_id)
 
-        if self.request_contact:
-            t = raw.types.ButtonTypeRequestPhone()
-        elif self.request_location:
-            t = raw.types.ButtonTypeRequestGeoLocation()
-        elif self.web_app:
-            t = raw.types.ButtonTypeSimpleWebView(url=self.web_app.url)
-        else:
-            t = raw.types.ButtonTypeDefault()
+        if style is not None:
+            if self.request_contact:
+                t = raw.types.ButtonTypeRequestPhone()
+            elif self.request_location:
+                t = raw.types.ButtonTypeRequestGeoLocation()
+            elif self.web_app:
+                t = raw.types.ButtonTypeSimpleWebView(url=self.web_app.url)
+            else:
+                t = raw.types.ButtonTypeDefault()
 
-        return raw.types.KeyboardButton(text=self.text, type=t, style=style)
+            return raw.types.KeyboardButtonStyled(text=self.text, type=t, style=style)
+
+        if self.request_contact:
+            return raw.types.KeyboardButtonRequestPhone(text=self.text)
+        elif self.request_location:
+            return raw.types.KeyboardButtonRequestGeoLocation(text=self.text)
+        elif self.web_app:
+            return raw.types.KeyboardButtonSimpleWebView(text=self.text, url=self.web_app.url)
+        else:
+            return raw.types.KeyboardButton(text=self.text)

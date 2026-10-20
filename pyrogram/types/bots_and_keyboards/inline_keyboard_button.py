@@ -109,68 +109,122 @@ class InlineKeyboardButton(Object):
         self.icon_custom_emoji_id = icon_custom_emoji_id
 
     @staticmethod
-    def read(b: "raw.base.KeyboardInlineButton"):
-        t = getattr(b, "type", None)
-
-        if isinstance(t, raw.types.InlineButtonTypeCallback):
+    def read(b: "raw.base.KeyboardButton"):
+        if isinstance(b, raw.types.KeyboardButtonCallback):
             # Try decode data to keep it as string, but if fails, fallback to bytes so we don't lose any information,
             # instead of decoding by ignoring/replacing errors.
             try:
-                data = t.data.decode()
+                data = b.data.decode()
             except UnicodeDecodeError:
-                data = t.data
+                data = b.data
 
             return InlineKeyboardButton(
                 text=b.text,
                 callback_data=data
             )
 
-        if isinstance(t, raw.types.InlineButtonTypeUrl):
+        if isinstance(b, raw.types.KeyboardButtonUrl):
             return InlineKeyboardButton(
                 text=b.text,
-                url=t.url
+                url=b.url
             )
 
-        if isinstance(t, raw.types.InlineButtonTypeUrlAuth):
+        if isinstance(b, raw.types.KeyboardButtonUrlAuth):
             return InlineKeyboardButton(
                 text=b.text,
-                login_url=types.LoginUrl.read(t)
+                login_url=types.LoginUrl.read(b)
             )
 
-        if isinstance(t, raw.types.InlineButtonTypeUserProfile):
+        if isinstance(b, raw.types.KeyboardButtonUserProfile):
             return InlineKeyboardButton(
                 text=b.text,
-                user_id=t.user_id
+                user_id=b.user_id
             )
 
-        if isinstance(t, raw.types.InlineButtonTypeSwitchInline):
-            if t.same_peer:
+        if isinstance(b, raw.types.KeyboardButtonSwitchInline):
+            if b.same_peer:
                 return InlineKeyboardButton(
                     text=b.text,
-                    switch_inline_query_current_chat=t.query
+                    switch_inline_query_current_chat=b.query
                 )
             else:
                 return InlineKeyboardButton(
                     text=b.text,
-                    switch_inline_query=t.query
+                    switch_inline_query=b.query
                 )
 
-        if isinstance(t, raw.types.InlineButtonTypeGame):
+        if isinstance(b, raw.types.KeyboardButtonGame):
             return InlineKeyboardButton(
                 text=b.text,
                 callback_game=types.CallbackGame()
             )
 
-        if isinstance(t, raw.types.InlineButtonTypeWebView):
+        if isinstance(b, raw.types.KeyboardButtonWebView):
             return InlineKeyboardButton(
                 text=b.text,
                 web_app=types.WebAppInfo(
-                    url=t.url
+                    url=b.url
                 )
             )
 
     async def write(self, client: "pyrogram.Client"):
-        """Serialize to the layer 231 inline button (supports style and custom emoji icon)."""
+        if self.callback_data is not None:
+            # Telegram only wants bytes, but we are allowed to pass strings too, for convenience.
+            data = bytes(self.callback_data, "utf-8") if isinstance(self.callback_data, str) else self.callback_data
+
+            return raw.types.KeyboardButtonCallback(
+                text=self.text,
+                data=data
+            )
+
+        if self.url is not None:
+            return raw.types.KeyboardButtonUrl(
+                text=self.text,
+                url=self.url
+            )
+
+        if self.login_url is not None:
+            return self.login_url.write(
+                text=self.text,
+                bot=await client.resolve_peer(self.login_url.bot_username or "self")
+            )
+
+        if self.user_id is not None:
+            return raw.types.InputKeyboardButtonUserProfile(
+                text=self.text,
+                user_id=await client.resolve_peer(self.user_id)
+            )
+
+        if self.switch_inline_query is not None:
+            return raw.types.KeyboardButtonSwitchInline(
+                text=self.text,
+                query=self.switch_inline_query
+            )
+
+        if self.switch_inline_query_current_chat is not None:
+            return raw.types.KeyboardButtonSwitchInline(
+                text=self.text,
+                query=self.switch_inline_query_current_chat,
+                same_peer=True
+            )
+
+        if self.callback_game is not None:
+            return raw.types.KeyboardButtonGame(
+                text=self.text
+            )
+
+        if self.web_app is not None:
+            return raw.types.KeyboardButtonWebView(
+                text=self.text,
+                url=self.web_app.url
+            )
+
+    @property
+    def has_style(self) -> bool:
+        return utils.make_button_style(self.style, self.icon_custom_emoji_id) is not None
+
+    async def write_styled(self, client: "pyrogram.Client"):
+        """Serialize to the new-style inline button (supports style and custom emoji icon)."""
         style = utils.make_button_style(self.style, self.icon_custom_emoji_id)
 
         if self.callback_data is not None:
@@ -203,11 +257,3 @@ class InlineKeyboardButton(Object):
                              "switch_inline_query, switch_inline_query_current_chat, callback_game or web_app")
 
         return raw.types.KeyboardInlineButton(text=self.text, type=t, style=style)
-
-    async def write_styled(self, client: "pyrogram.Client"):
-        # Kept for backwards compatibility: write() now always uses the layer 231 format.
-        return await self.write(client)
-
-    @property
-    def has_style(self) -> bool:
-        return utils.make_button_style(self.style, self.icon_custom_emoji_id) is not None

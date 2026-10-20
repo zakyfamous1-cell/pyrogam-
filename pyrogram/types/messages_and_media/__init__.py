@@ -24,7 +24,6 @@ from .dice import Dice
 from .document import Document
 from .game import Game
 from .location import Location
-from .input_rich_message import InputRichMessage, InputRichMessageMedia
 from .message import Message
 from .message_entity import MessageEntity
 from .photo import Photo
@@ -43,8 +42,6 @@ from .web_page import WebPage
 from .message_reactions import MessageReactions
 
 __all__ = [
-    "InputRichMessage",
-    "InputRichMessageMedia",
     "Animation", "Audio", "AvailableEffect", "Contact", "Document", "Game", "Location", "Message", "MessageEntity", "Photo", "Thumbnail",
     "StrippedThumbnail", "Poll", "PollOption", "Sticker", "Venue", "Video", "VideoNote", "Voice", "WebPage", "Dice",
     "Reaction", "WebAppData", "MessageReactions"

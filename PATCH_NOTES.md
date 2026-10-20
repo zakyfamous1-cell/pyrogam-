@@ -1,17 +1,8 @@
 # Patch: message effects, button styles, custom emoji on buttons
 
-Schema source: Telegram Desktop api.tl, **full layer 231** (compiler/api/source/main_api.tl).
-Previously the schema stayed at layer 166 with a few write-only additions, which made newer incoming
-updates fail with "unknown constructor: 0x7600b9d3" (the new `message` constructor). That is fixed now.
-
-Layer 231 migration notes:
-- TL arg `from` is renamed `from_` (Python keyword) in compiler/api/compiler.py.
-- Buttons use the new format only: KeyboardButton/KeyboardInlineButton + ButtonType/InlineButtonType (+ style).
-  The old KeyboardButtonUrl/Callback/... constructors no longer exist.
-- Rich messages and effects are native flags (`rich_message`, `effect`) of messages.sendMessage / editMessage.
-- EmojiStatus now has an `until` flag (EmojiStatusUntil is gone); Poll needs `hash`; messages.Messages needs `topics`.
-- Verified statically (all raw.* references resolve, kwargs and required args match the schema) and with
-  serialization round-trips. NOT tested against live Telegram servers.
+Schema source: Telegram Desktop api.tl (layer 231). Only additive, write-only constructors were
+added to compiler/api/source/main_api.tl. The declared layer stays 166, so incoming updates
+keep parsing exactly like before.
 
 Rebuild the raw API after copying this folder (needed once):
 
@@ -44,20 +35,4 @@ Rebuild the raw API after copying this folder (needed once):
 - If any button in an inline keyboard has style/icon, the whole keyboard is sent in the new format.
 - Custom emoji in text already worked: <emoji id="...">x</emoji> with ParseMode.HTML.
 
-Reading effect_id / style back from incoming messages is still not mapped to high-level types (raw fields are available now).
-
-## Rich message (table + in-message pill buttons)
-
-Added `types.InputRichMessage`, `types.InputRichMessageMedia`, `Client.send_rich_message(...)` and
-`edit_message_text(..., rich_message=...)` (text is now optional). The HTML is parsed by Telegram, so
-`<table>`, `<h3>`, `<tg-button-row><tg-button style="success" ...>` and `<tg-emoji>` work.
-Same API names as kurigram, so helpers written for kurigram (e.g. botvvip1/modules/ui.py) run unchanged.
-
-    from pyrogram.types import InputRichMessage
-    await app.send_rich_message(chat_id, InputRichMessage(
-        html='<h3>Order</h3><table><tr><th>Item</th><th>Qty</th></tr><tr><td>Tea</td><td>2</td></tr></table>'
-             '<tg-button-row><tg-button type="callback_data" style="danger" data="cancel">Batal</tg-button></tg-button-row>'))
-
-- Rich messages only work from BOT accounts (not userbots).
-- Media inside a rich message supports file_id only. URLs/paths raise, and ui.py then sends the media separately.
-- Reading rich messages back from incoming updates is not implemented.
+Not included: reading effect_id / style back from incoming messages (needs a full layer bump).

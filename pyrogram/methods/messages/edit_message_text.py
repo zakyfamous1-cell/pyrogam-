@@ -29,12 +29,11 @@ class EditMessageText:
         self: "pyrogram.Client",
         chat_id: Union[int, str],
         message_id: int,
-        text: str = None,
+        text: str,
         parse_mode: Optional["enums.ParseMode"] = None,
         entities: List["types.MessageEntity"] = None,
         disable_web_page_preview: bool = None,
-        reply_markup: "types.InlineKeyboardMarkup" = None,
-        rich_message: "types.InputRichMessage" = None
+        reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> "types.Message":
         """Edit the text of messages.
 
@@ -65,10 +64,6 @@ class EditMessageText:
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
 
-            rich_message (:obj:`~pyrogram.types.InputRichMessage`, *optional*):
-                Replace the message with a rich message (tables, in-message buttons). Bots only.
-                When given, *text* is ignored.
-
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the edited message is returned.
 
@@ -84,25 +79,15 @@ class EditMessageText:
                     disable_web_page_preview=True)
         """
 
-        if rich_message is not None:
-            r = await self.invoke(
-                raw.functions.messages.EditMessage(
-                    peer=await self.resolve_peer(chat_id),
-                    id=message_id,
-                    reply_markup=await reply_markup.write(self) if reply_markup else None,
-                    rich_message=await rich_message.write(self)
-                )
+        r = await self.invoke(
+            raw.functions.messages.EditMessage(
+                peer=await self.resolve_peer(chat_id),
+                id=message_id,
+                no_webpage=disable_web_page_preview or None,
+                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                **await utils.parse_text_entities(self, text, parse_mode, entities)
             )
-        else:
-            r = await self.invoke(
-                raw.functions.messages.EditMessage(
-                    peer=await self.resolve_peer(chat_id),
-                    id=message_id,
-                    no_webpage=disable_web_page_preview or None,
-                    reply_markup=await reply_markup.write(self) if reply_markup else None,
-                    **await utils.parse_text_entities(self, text, parse_mode, entities)
-                )
-            )
+        )
 
         for i in r.updates:
             if isinstance(i, (raw.types.UpdateEditMessage, raw.types.UpdateEditChannelMessage)):
