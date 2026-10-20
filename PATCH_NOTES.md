@@ -36,3 +36,19 @@ Rebuild the raw API after copying this folder (needed once):
 - Custom emoji in text already worked: <emoji id="...">x</emoji> with ParseMode.HTML.
 
 Not included: reading effect_id / style back from incoming messages (needs a full layer bump).
+
+## Rich message (table + in-message pill buttons)
+
+Added `types.InputRichMessage`, `types.InputRichMessageMedia`, `Client.send_rich_message(...)` and
+`edit_message_text(..., rich_message=...)` (text is now optional). The HTML is parsed by Telegram, so
+`<table>`, `<h3>`, `<tg-button-row><tg-button style="success" ...>` and `<tg-emoji>` work.
+Same API names as kurigram, so helpers written for kurigram (e.g. botvvip1/modules/ui.py) run unchanged.
+
+    from pyrogram.types import InputRichMessage
+    await app.send_rich_message(chat_id, InputRichMessage(
+        html='<h3>Order</h3><table><tr><th>Item</th><th>Qty</th></tr><tr><td>Tea</td><td>2</td></tr></table>'
+             '<tg-button-row><tg-button type="callback_data" style="danger" data="cancel">Batal</tg-button></tg-button-row>'))
+
+- Rich messages only work from BOT accounts (not userbots).
+- Media inside a rich message supports file_id only. URLs/paths raise, and ui.py then sends the media separately.
+- Reading rich messages back from incoming updates is not implemented.
