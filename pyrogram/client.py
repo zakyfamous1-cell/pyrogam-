@@ -44,7 +44,7 @@ from pyrogram.errors import CDNFileHashMismatch
 from pyrogram.errors import (
     SessionPasswordNeeded,
     VolumeLocNotFound, ChannelPrivate,
-    BadRequest
+    BadRequest, InternalServerError
 )
 from pyrogram.handlers.handler import Handler
 from pyrogram.methods import Methods
@@ -583,7 +583,10 @@ class Client(Methods):
                                     limit=pts
                                 )
                             )
-                        except ChannelPrivate:
+                        except (ChannelPrivate, InternalServerError):
+                            # Diff hanya untuk melengkapi data user/chat "min".
+                            # Kalau gagal (mis. 500 HISTORY_GET_FAILED), update tetap
+                            # diteruskan ke dispatcher, jangan dibuang.
                             pass
                         else:
                             if not isinstance(diff, raw.types.updates.ChannelDifferenceEmpty):
