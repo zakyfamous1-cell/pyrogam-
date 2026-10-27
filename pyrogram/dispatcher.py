@@ -162,6 +162,7 @@ class Dispatcher:
                 await i
 
             self.handler_worker_tasks.clear()
+            self.locks_list.clear()
             self.groups.clear()
 
             log.info("Stopped %s HandlerTasks", self.client.workers)
