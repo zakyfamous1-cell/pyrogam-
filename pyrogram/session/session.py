@@ -47,6 +47,7 @@ class Result:
 class Session:
     START_TIMEOUT = 2
     WAIT_TIMEOUT = 15
+    START_WAIT_TIMEOUT = 5  # batas tunggu kalau sesi belum started; lewat ini invoke langsung gagal
     SLEEP_THRESHOLD = 10
     MAX_RETRIES = 10
     ACKS_THRESHOLD = 10
@@ -372,10 +373,11 @@ class Session:
         timeout: float = WAIT_TIMEOUT,
         sleep_threshold: float = SLEEP_THRESHOLD
     ):
-        try:
-            await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
-        except asyncio.TimeoutError:
-            pass
+        if not self.is_started.is_set():
+            try:
+                await asyncio.wait_for(self.is_started.wait(), self.START_WAIT_TIMEOUT)
+            except asyncio.TimeoutError:
+                raise ConnectionError("Session is not started") from None
 
         if isinstance(query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)):
             inner_query = query.query
