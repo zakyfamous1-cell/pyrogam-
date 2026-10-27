@@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
 
 class TCP:
     TIMEOUT = 10
+    RECV_TIMEOUT = 30
 
     def __init__(self, ipv6: bool, proxy: dict):
         self.socket = None
@@ -110,7 +111,7 @@ class TCP:
             try:
                 chunk = await asyncio.wait_for(
                     self.reader.read(length - len(data)),
-                    TCP.TIMEOUT
+                    TCP.RECV_TIMEOUT
                 )
             except (OSError, asyncio.TimeoutError):
                 return None
