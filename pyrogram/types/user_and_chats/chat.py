@@ -287,16 +287,20 @@ class Chat(Object):
         peer_id = utils.get_raw_peer_id(message.peer_id)
         chat_id = (peer_id or from_id) if is_chat else (from_id or peer_id)
 
-        # Pengirim adalah user tapi tidak ada di `users` (peer belum dikenal/akun baru):
-        # jangan dianggap channel, cukup tidak ada sender_chat.
-        if not is_chat and isinstance(message.from_id, raw.types.PeerUser):
-            return None
-
+        # Untuk sender_chat (is_chat=False), data bisa tidak lengkap di update;
+        # kalau tidak ada, kembalikan None daripada KeyError.
         if isinstance(message.peer_id, raw.types.PeerUser):
+            if not is_chat and chat_id not in users:
+                return None
             return Chat._parse_user_chat(client, users[chat_id])
 
         if isinstance(message.peer_id, raw.types.PeerChat):
+            if not is_chat and chat_id not in chats:
+                return None
             return Chat._parse_chat_chat(client, chats[chat_id])
+
+        if not is_chat and chat_id not in chats:
+            return None
 
         return Chat._parse_channel_chat(client, chats[chat_id])
 
@@ -523,8 +527,4 @@ class Chat(Object):
                 # Set chat photo using a local file
                 await chat.set_photo(photo="photo.jpg")
 
-                # Set chat photo using an existing Photo file_id
-                await chat.set_photo(photo=photo.file_id)
-
-
-                # Set 
+                # Set c
