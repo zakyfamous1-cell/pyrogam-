@@ -256,5 +256,8 @@ class Dispatcher:
                             break
             except pyrogram.StopPropagation:
                 pass
+            except ConnectionError:
+                # Session sedang putus/reconnect: update dilewati diam-diam, tanpa log
+                pass
             except Exception as e:
                 log.exception(e)
