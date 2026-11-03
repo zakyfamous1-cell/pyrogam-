@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import logging
 from datetime import datetime
 from functools import partial
@@ -839,6 +840,10 @@ class Message(Object, Update):
                     try:
                         key = (parsed_message.chat.id, parsed_message.reply_to_message_id)
                         reply_to_message = client.message_cache[key]
+
+                        if reply_to_message:
+                            reply_to_message = copy.copy(reply_to_message)
+                            reply_to_message.reply_to_message = None
 
                         if not reply_to_message:
                             reply_to_message = await client.get_messages(
