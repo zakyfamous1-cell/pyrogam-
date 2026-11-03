@@ -843,6 +843,7 @@ class Message(Object, Update):
 
                         if reply_to_message:
                             reply_to_message = copy.copy(reply_to_message)
+                            reply_to_message._client = client
                             reply_to_message.reply_to_message = None
 
                         if not reply_to_message:
